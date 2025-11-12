@@ -5,13 +5,32 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package fprint
 
-import "errors"
-import "fmt"
-import "github.com/godbus/dbus/v5"
+import (
+	"errors"
+	"fmt"
+	"unsafe"
 
-import "github.com/linuxdeepin/go-lib/dbusutil"
-import "github.com/linuxdeepin/go-lib/dbusutil/proxy"
-import "unsafe"
+	"github.com/godbus/dbus/v5"
+	"github.com/linuxdeepin/go-dbus-factory/object_manager"
+	"github.com/linuxdeepin/go-lib/dbusutil"
+	"github.com/linuxdeepin/go-lib/dbusutil/proxy"
+)
+
+type ObjectManager interface {
+	object_manager.ObjectManager // interface org.freedesktop.DBus.ObjectManager
+	proxy.Object
+}
+
+type objectObjectManager struct {
+	object_manager.InterfaceObjectManager // interface org.freedesktop.DBus.ObjectManager
+	proxy.ImplObject
+}
+
+func NewObjectManager(conn *dbus.Conn) ObjectManager {
+	obj := new(objectObjectManager)
+	obj.ImplObject.Init_(conn, "net.reactivated.Fprint", "/net/reactivated/Fprint")
+	return obj
+}
 
 type Manager interface {
 	manager // interface net.reactivated.Fprint.Manager

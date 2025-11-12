@@ -5,13 +5,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package authenticate1
 
-import "errors"
-import "fmt"
-import "github.com/godbus/dbus/v5"
+import (
+	"errors"
+	"fmt"
+	"unsafe"
 
-import "github.com/linuxdeepin/go-lib/dbusutil"
-import "github.com/linuxdeepin/go-lib/dbusutil/proxy"
-import "unsafe"
+	"github.com/godbus/dbus/v5"
+	"github.com/linuxdeepin/go-lib/dbusutil"
+	"github.com/linuxdeepin/go-lib/dbusutil/proxy"
+)
 
 type Authenticate interface {
 	authenticate // interface org.deepin.dde.Authenticate1
@@ -39,6 +41,7 @@ type authenticate interface {
 	GoResetLimits(flags dbus.Flags, ch chan *dbus.Call, username string) *dbus.Call
 	ResetLimits(flags dbus.Flags, username string) error
 	ConnectLimitUpdated(cb func(username string)) (dbusutil.SignalHandlerId, error)
+	ConnectDeviceChange(cb func(deviceFlag int32, action int32)) (dbusutil.SignalHandlerId, error)
 	SupportEncrypts() proxy.PropString
 	FrameworkState() proxy.PropInt32
 	SupportedFlags() proxy.PropInt32
@@ -132,6 +135,33 @@ func (v *interfaceAuthenticate) ConnectLimitUpdated(cb func(username string)) (d
 		err := dbus.Store(sig.Body, &username)
 		if err == nil {
 			cb(username)
+		}
+	}
+
+	return obj.ConnectSignal_(rule, sigRule, handlerFunc)
+}
+
+// signal DeviceChange
+
+func (v *interfaceAuthenticate) ConnectDeviceChange(cb func(deviceFlag int32, action int32)) (dbusutil.SignalHandlerId, error) {
+	if cb == nil {
+		return 0, errors.New("nil callback")
+	}
+	obj := v.GetObject_()
+	rule := fmt.Sprintf(
+		"type='signal',interface='%s',member='%s',path='%s',sender='%s'",
+		v.GetInterfaceName_(), "DeviceChange", obj.Path_(), obj.ServiceName_())
+
+	sigRule := &dbusutil.SignalRule{
+		Path: obj.Path_(),
+		Name: v.GetInterfaceName_() + ".DeviceChange",
+	}
+	handlerFunc := func(sig *dbus.Signal) {
+		var deviceFlag int32
+		var action int32
+		err := dbus.Store(sig.Body, &deviceFlag, &action)
+		if err == nil {
+			cb(deviceFlag, action)
 		}
 	}
 
@@ -1124,5 +1154,115 @@ func (v *interfaceCharaManger) DriverInfo() proxy.PropString {
 	return &proxy.ImplPropString{
 		Impl: v,
 		Name: "DriverInfo",
+	}
+}
+
+type Passkey interface {
+	passkey // interface org.deepin.dde.Authenticate1.Passkey
+	proxy.Object
+}
+
+type objectPasskey struct {
+	interfacePasskey // interface org.deepin.dde.Authenticate1.Passkey
+	proxy.ImplObject
+}
+
+func NewPasskey(conn *dbus.Conn) Passkey {
+	obj := new(objectPasskey)
+	obj.ImplObject.Init_(conn, "org.deepin.dde.Authenticate1", "/org/deepin/dde/Authenticate1/Passkey")
+	return obj
+}
+
+type passkey interface {
+	GoListCreds(flags dbus.Flags, ch chan *dbus.Call, username string) *dbus.Call
+	ListCreds(flags dbus.Flags, username string) ([]string, error)
+	GoStartVerify(flags dbus.Flags, ch chan *dbus.Call, username string) *dbus.Call
+	StartVerify(flags dbus.Flags, username string) error
+	GoStopVerify(flags dbus.Flags, ch chan *dbus.Call) *dbus.Call
+	StopVerify(flags dbus.Flags) error
+	ConnectVerifyStatus(cb func(user string, code int32, msg string)) (dbusutil.SignalHandlerId, error)
+	DefaultDevice() proxy.PropString
+}
+
+type interfacePasskey struct{}
+
+func (v *interfacePasskey) GetObject_() *proxy.ImplObject {
+	return (*proxy.ImplObject)(unsafe.Pointer(v))
+}
+
+func (*interfacePasskey) GetInterfaceName_() string {
+	return "org.deepin.dde.Authenticate1.Passkey"
+}
+
+// method ListCreds
+
+func (v *interfacePasskey) GoListCreds(flags dbus.Flags, ch chan *dbus.Call, username string) *dbus.Call {
+	return v.GetObject_().Go_(v.GetInterfaceName_()+".ListCreds", flags, ch, username)
+}
+
+func (*interfacePasskey) StoreListCreds(call *dbus.Call) (creds []string, err error) {
+	err = call.Store(&creds)
+	return
+}
+
+func (v *interfacePasskey) ListCreds(flags dbus.Flags, username string) ([]string, error) {
+	return v.StoreListCreds(
+		<-v.GoListCreds(flags, make(chan *dbus.Call, 1), username).Done)
+}
+
+// method StartVerify
+
+func (v *interfacePasskey) GoStartVerify(flags dbus.Flags, ch chan *dbus.Call, username string) *dbus.Call {
+	return v.GetObject_().Go_(v.GetInterfaceName_()+".StartVerify", flags, ch, username)
+}
+
+func (v *interfacePasskey) StartVerify(flags dbus.Flags, username string) error {
+	return (<-v.GoStartVerify(flags, make(chan *dbus.Call, 1), username).Done).Err
+}
+
+// method StopVerify
+
+func (v *interfacePasskey) GoStopVerify(flags dbus.Flags, ch chan *dbus.Call) *dbus.Call {
+	return v.GetObject_().Go_(v.GetInterfaceName_()+".StopVerify", flags, ch)
+}
+
+func (v *interfacePasskey) StopVerify(flags dbus.Flags) error {
+	return (<-v.GoStopVerify(flags, make(chan *dbus.Call, 1)).Done).Err
+}
+
+// signal VerifyStatus
+
+func (v *interfacePasskey) ConnectVerifyStatus(cb func(user string, code int32, msg string)) (dbusutil.SignalHandlerId, error) {
+	if cb == nil {
+		return 0, errors.New("nil callback")
+	}
+	obj := v.GetObject_()
+	rule := fmt.Sprintf(
+		"type='signal',interface='%s',member='%s',path='%s',sender='%s'",
+		v.GetInterfaceName_(), "VerifyStatus", obj.Path_(), obj.ServiceName_())
+
+	sigRule := &dbusutil.SignalRule{
+		Path: obj.Path_(),
+		Name: v.GetInterfaceName_() + ".VerifyStatus",
+	}
+	handlerFunc := func(sig *dbus.Signal) {
+		var user string
+		var code int32
+		var msg string
+		err := dbus.Store(sig.Body, &user, &code, &msg)
+		if err == nil {
+			cb(user, code, msg)
+		}
+	}
+
+	return obj.ConnectSignal_(rule, sigRule, handlerFunc)
+}
+
+// property DefaultDevice s
+
+func (v *interfacePasskey) DefaultDevice() proxy.PropString {
+	return &proxy.ImplPropString{
+		Impl: v,
+		Name: "DefaultDevice",
 	}
 }

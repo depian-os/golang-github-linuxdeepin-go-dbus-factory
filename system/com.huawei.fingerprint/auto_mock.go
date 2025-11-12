@@ -5,11 +5,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package fingerprint
 
-import "fmt"
-import "github.com/godbus/dbus/v5"
-import "github.com/linuxdeepin/go-lib/dbusutil"
-import "github.com/linuxdeepin/go-lib/dbusutil/proxy"
-import "github.com/stretchr/testify/mock"
+import (
+	"fmt"
+
+	"github.com/godbus/dbus/v5"
+	"github.com/linuxdeepin/go-lib/dbusutil"
+	"github.com/linuxdeepin/go-lib/dbusutil/proxy"
+	"github.com/stretchr/testify/mock"
+)
 
 type MockFingerprint struct {
 	MockInterfaceFingerprint // interface com.huawei.Fingerprint
@@ -234,6 +237,19 @@ func (v *MockInterfaceFingerprint) ConnectIdentifyNoAccount(cb func(result int32
 // signal VerifyStatus
 
 func (v *MockInterfaceFingerprint) ConnectVerifyStatus(cb func(result int32)) (dbusutil.SignalHandlerId, error) {
+	mockArgs := v.Called(cb)
+
+	ret0, ok := mockArgs.Get(0).(dbusutil.SignalHandlerId)
+	if !ok {
+		panic(fmt.Sprintf("assert: arguments: %d failed because object wasn't correct type: %v", 0, mockArgs.Get(0)))
+	}
+
+	return ret0, mockArgs.Error(1)
+}
+
+// signal DeviceStatus
+
+func (v *MockInterfaceFingerprint) ConnectDeviceStatus(cb func(DeviceStatus bool)) (dbusutil.SignalHandlerId, error) {
 	mockArgs := v.Called(cb)
 
 	ret0, ok := mockArgs.Get(0).(dbusutil.SignalHandlerId)

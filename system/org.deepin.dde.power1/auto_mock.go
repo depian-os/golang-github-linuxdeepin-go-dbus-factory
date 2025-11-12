@@ -5,11 +5,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package power1
 
-import "fmt"
-import "github.com/godbus/dbus/v5"
-import "github.com/linuxdeepin/go-lib/dbusutil"
-import "github.com/linuxdeepin/go-lib/dbusutil/proxy"
-import "github.com/stretchr/testify/mock"
+import (
+	"fmt"
+
+	"github.com/godbus/dbus/v5"
+	"github.com/linuxdeepin/go-lib/dbusutil"
+	"github.com/linuxdeepin/go-lib/dbusutil/proxy"
+	"github.com/stretchr/testify/mock"
+)
 
 type MockPower struct {
 	MockInterfacePower // interface org.deepin.dde.Power1
@@ -294,6 +297,19 @@ func (v *MockInterfacePower) HasLidSwitch() proxy.PropBool {
 	return ret0
 }
 
+// property LidClosed b
+
+func (v *MockInterfacePower) LidClosed() proxy.PropBool {
+	mockArgs := v.Called()
+
+	ret0, ok := mockArgs.Get(0).(*proxy.MockPropBool)
+	if !ok {
+		panic(fmt.Sprintf("assert: arguments: %d failed because object wasn't correct type: %v", 0, mockArgs.Get(0)))
+	}
+
+	return ret0
+}
+
 // property BatteryPercentage d
 
 func (v *MockInterfacePower) BatteryPercentage() proxy.PropDouble {
@@ -417,6 +433,19 @@ func (v *MockInterfacePower) PowerSavingModeBrightnessData() proxy.PropString {
 	mockArgs := v.Called()
 
 	ret0, ok := mockArgs.Get(0).(*proxy.MockPropString)
+	if !ok {
+		panic(fmt.Sprintf("assert: arguments: %d failed because object wasn't correct type: %v", 0, mockArgs.Get(0)))
+	}
+
+	return ret0
+}
+
+// property IsInBootTime b
+
+func (v *MockInterfacePower) IsInBootTime() proxy.PropBool {
+	mockArgs := v.Called()
+
+	ret0, ok := mockArgs.Get(0).(*proxy.MockPropBool)
 	if !ok {
 		panic(fmt.Sprintf("assert: arguments: %d failed because object wasn't correct type: %v", 0, mockArgs.Get(0)))
 	}

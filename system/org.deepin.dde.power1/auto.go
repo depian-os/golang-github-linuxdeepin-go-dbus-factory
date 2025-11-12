@@ -5,13 +5,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 package power1
 
-import "errors"
-import "fmt"
-import "github.com/godbus/dbus/v5"
+import (
+	"errors"
+	"fmt"
+	"unsafe"
 
-import "github.com/linuxdeepin/go-lib/dbusutil"
-import "github.com/linuxdeepin/go-lib/dbusutil/proxy"
-import "unsafe"
+	"github.com/godbus/dbus/v5"
+	"github.com/linuxdeepin/go-lib/dbusutil"
+	"github.com/linuxdeepin/go-lib/dbusutil/proxy"
+)
 
 type Power interface {
 	power // interface org.deepin.dde.Power1
@@ -55,6 +57,7 @@ type power interface {
 	PowerSavingModeAuto() proxy.PropBool
 	OnBattery() proxy.PropBool
 	HasLidSwitch() proxy.PropBool
+	LidClosed() proxy.PropBool
 	BatteryPercentage() proxy.PropDouble
 	BatteryTimeToEmpty() proxy.PropUint64
 	HasBattery() proxy.PropBool
@@ -65,6 +68,7 @@ type power interface {
 	PowerSavingModeAutoWhenBatteryLow() proxy.PropBool
 	PowerSavingModeBrightnessDropPercent() proxy.PropUint32
 	PowerSavingModeBrightnessData() proxy.PropString
+	IsInBootTime() proxy.PropBool
 	CpuGovernor() proxy.PropString
 	CpuBoost() proxy.PropBool
 	IsBoostSupported() proxy.PropBool
@@ -345,6 +349,15 @@ func (v *interfacePower) HasLidSwitch() proxy.PropBool {
 	}
 }
 
+// property LidClosed b
+
+func (v *interfacePower) LidClosed() proxy.PropBool {
+	return &proxy.ImplPropBool{
+		Impl: v,
+		Name: "LidClosed",
+	}
+}
+
 // property BatteryPercentage d
 
 func (v *interfacePower) BatteryPercentage() proxy.PropDouble {
@@ -432,6 +445,15 @@ func (v *interfacePower) PowerSavingModeBrightnessData() proxy.PropString {
 	return &proxy.ImplPropString{
 		Impl: v,
 		Name: "PowerSavingModeBrightnessData",
+	}
+}
+
+// property IsInBootTime b
+
+func (v *interfacePower) IsInBootTime() proxy.PropBool {
+	return &proxy.ImplPropBool{
+		Impl: v,
+		Name: "IsInBootTime",
 	}
 }
 
